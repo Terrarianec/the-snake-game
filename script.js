@@ -231,7 +231,7 @@ function moveToTarget(target) {
 }
 
 function drawGame(start) {
-    if (start) {
+    if (true) { //Змея режется
         ctx.clearRect(0, 0, canvas.width, canvas.height)
 
         Draw(PredrawFood(Base.Food));
