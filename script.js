@@ -2,7 +2,7 @@
 const canvas = document.getElementById("field"),
     other = document.getElementById("other"),
     stats = document.getElementById("stats"),
-    boxSize = 96,
+    boxSize = 48,
     Width = Math.floor(window.innerWidth / boxSize) * boxSize,
     Height = Math.floor(window.innerHeight / boxSize) * boxSize,
     TPinBox = 16 //Количество пикселей на одну текстуру т.е. 1 пиксель текстуры = (boxSize / TPinBox)^2 обычных пикселей
@@ -50,7 +50,7 @@ document.addEventListener("wheel", (event) => {
     Base.Timer = setInterval(Frame, Base.Interval)
 })
 
-let FPS = 60
+let FPS = 120
 
 const Base = {
     Start: { x: 1, y: 1, direction: "right" },
@@ -204,23 +204,20 @@ function moveToTarget(target) {
         difference = {
             x: [
                 target.x - now.x,
-                target.x + Width / boxSize + now.x ? target.x + Width / boxSize + now.x : Width / boxSize,
-                target.x - Width / boxSize - now.x ? target.x - Width / boxSize - now.x : Width / boxSize
+                target.x - Width / boxSize - now.x
             ].sort((a, b) => Math.abs(a) - Math.abs(b))[0],
             y: [
                 target.y - now.y,
-                target.y + Height / boxSize + now.y ? target.y + Height / boxSize + now.y : Height / boxSize,
-                target.y - Height / boxSize - now.y ? target.y - Height / boxSize - now.y : Height / boxSize
+                target.y - Height / boxSize - now.y,
             ].sort((a, b) => Math.abs(a) - Math.abs(b))[0]
         }
-    WayType = Math.round(Math.random() * 2)
-    if (difference.x && WayType !== 1) {
+    if (Math.round(Math.random()) && difference.x) {
         let action = difference.x > 0 ? "right" : "left"
         snake = actions[action](snake)
         let newTail = snake.body.pop()
         snake.tail = { x: newTail.x, y: newTail.y, direction: snake.body.length > 0 ? snake.body[snake.body.length - 1].direction.split("-")[1] : GetOpposite(snake.head.direction) }
     }
-    if (difference.y && WayType > 0) {
+    else if (difference.y) {
         let action = difference.y > 0 ? "down" : "up"
         snake = actions[action](snake)
         let newTail = snake.body.pop()
@@ -231,7 +228,7 @@ function moveToTarget(target) {
 }
 
 function drawGame(start) {
-    if (true) { //Змея режется
+    if (start) { //Змея режется
         ctx.clearRect(0, 0, canvas.width, canvas.height)
 
         Draw(PredrawFood(Base.Food));
@@ -276,9 +273,9 @@ function Frame() {
     if (Base.Win) {
         Base.Win = false;
         snake = {
-            head: { x: -1, y: -1, direction: "right" },
+            head: { x: 1, y: 1, direction: "right" },
             body: [],
-            tail: { x: -1, y: -1, direction: "left" }
+            tail: { x: 1, y: 1, direction: "left" }
         };
         return drawGame(true)
     }
