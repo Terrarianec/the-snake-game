@@ -72,6 +72,9 @@ const Base = {
                 this.push(Pos)
                 if (this.length > this.limit) this.splice(0, this.length - this.limit)
             }
+            this.set = (...args) => {
+                return this.splice(0, this.length, ...args)
+            }
         }
 
     },
@@ -95,7 +98,7 @@ const Base = {
         "right": (snake) => {
             let will = snake.head.x + 1
             snake.head.direction = "right"
-            snake.body.unshift({ x: snake.head.x, y: snake.head.y, direction: `${snake.head.direction}-${GetDirection(snake.head, snake.body)}` })
+            snake.body.unshift({ x: snake.head.x, y: snake.head.y, direction: `${snake.head.direction}-${getDirection(snake.head, snake.body)}` })
             snake.head.x = will >= Width / boxSize ? 0 : will
             if (Base.Food.x === snake.head.x && Base.Food.y === snake.head.y) { generateFood(); snake.body.push({ x: snake.tail.x, y: snake.tail.y, direction: `${snake.body[snake.body.length - 1]}-${snake.tail.direction}` }) }
             return snake
@@ -103,7 +106,7 @@ const Base = {
         "left": (snake) => {
             let will = snake.head.x - 1
             snake.head.direction = "left"
-            snake.body.unshift({ x: snake.head.x, y: snake.head.y, direction: `${snake.head.direction}-${GetDirection(snake.head, snake.body)}` })
+            snake.body.unshift({ x: snake.head.x, y: snake.head.y, direction: `${snake.head.direction}-${getDirection(snake.head, snake.body)}` })
             snake.head.x = will < 0 ? Width / boxSize - 1 : will
             if (Base.Food.x === snake.head.x && Base.Food.y === snake.head.y) { generateFood(); snake.body.push({ x: snake.tail.x, y: snake.tail.y, direction: `${snake.body[snake.body.length - 1]}-${snake.tail.direction}` }) }
             return snake
@@ -111,7 +114,7 @@ const Base = {
         "down": (snake) => {
             let will = snake.head.y + 1
             snake.head.direction = "down"
-            snake.body.unshift({ x: snake.head.x, y: snake.head.y, direction: `${snake.head.direction}-${GetDirection(snake.head, snake.body)}` })
+            snake.body.unshift({ x: snake.head.x, y: snake.head.y, direction: `${snake.head.direction}-${getDirection(snake.head, snake.body)}` })
             snake.head.y = will >= Height / boxSize ? 0 : will
             if (Base.Food.x === snake.head.x && Base.Food.y === snake.head.y) { generateFood(); snake.body.push({ x: snake.tail.x, y: snake.tail.y, direction: `${snake.body[snake.body.length - 1]}-${snake.tail.direction}` }) }
             return snake
@@ -119,39 +122,62 @@ const Base = {
         "up": (snake) => {
             let will = snake.head.y - 1
             snake.head.direction = "up"
-            snake.body.unshift({ x: snake.head.x, y: snake.head.y, direction: `${snake.head.direction}-${GetDirection(snake.head, snake.body)}` })
+            snake.body.unshift({ x: snake.head.x, y: snake.head.y, direction: `${snake.head.direction}-${getDirection(snake.head, snake.body)}` })
             snake.head.y = will < 0 ? Height / boxSize - 1 : will
             if (Base.Food.x === snake.head.x && Base.Food.y === snake.head.y) { generateFood(); snake.body.push({ x: snake.tail.x, y: snake.tail.y, direction: `${snake.body[snake.body.length - 1]}-${snake.tail.direction}` }) }
             return snake
-        },
-        "Nothng": (snake) => snake
+        }
     }
+document.addEventListener('keydown', event => {
+    const keys = ['W', 'A', 'S', 'D']
+    if (keys.some(key => event.code.endsWith(key))) {
+        let nextPos,
+            { x, y } = snake.head,
+            height = Height / boxSize,
+            width = Width / boxSize
+        Base.AI = false;
+        switch (event.code[event.code.length - 1]) {
+            case 'W': {
+                nextPos = { x, y: (y + height - 1) % height }
+                break;
+            }
+            case 'A': {
+                nextPos = { x: (x + width - 1) % width, y }
+                break;
+            }
+            case 'S': {
+                nextPos = { x, y: (y + height + 1) % height }
+                break;
+            }
+            case 'D': {
+                nextPos = { x: (x + width + 1) % width, y }
+                break;
+            }
+        }
+        if (!targets[0] || targets[0].x !== nextPos.x || targets[0].y !== nextPos.y) targets.set(nextPos)
+    }
+})
 
 let snake = {
     head: Base.Start,
     body: [],
-    tail: { x: Base.Start.x, y: Base.Start.y, direction: GetOpposite(Base.Start.direction) }
+    tail: { x: Base.Start.x, y: Base.Start.y, direction: getOpposite(Base.Start.direction) }
 },
     beforePositions = {
-        head: { x: -Base.Start.x, y: -Base.Start.y, direction: GetOpposite(Base.Start.direction) },
+        head: { x: -Base.Start.x, y: -Base.Start.y, direction: getOpposite(Base.Start.direction) },
         tail: { x: -Base.Start.x, y: -Base.Start.y, direction: Base.Start.direction }
     }
 
 if (!isFinite(Base.BodyLength) || Base.BodyLength > Width * Height / (boxSize ** 2) - 1) Base.BodyLength = Width * Height / (boxSize ** 2) - 1
-for (let i = 0; i < Math.abs(Base.BodyLength); i++) snake.body.push({ x: Base.Start.x, y: Base.Start.y, direction: `${Base.Start.direction}-${GetOpposite(Base.Start.direction)}` })
+for (let i = 0; i < Math.abs(Base.BodyLength); i++) snake.body.push({ x: Base.Start.x, y: Base.Start.y, direction: `${Base.Start.direction}-${getOpposite(Base.Start.direction)}` })
 
-function GetOpposite(direction) {
-    return direction === "right"
-        ? "left"
-        : direction === "down"
-            ? "up"
-            : direction === "up"
-                ? "down"
-                : "right"
+function getOpposite(direction) {
+    const directions = ['right', 'down', 'left', 'up']
+    return directions[(directions.indexOf(direction) + 2) % 4]
 }
 
-function GetDirection(head, body) {
-    if (body.length === 0) return GetOpposite(head.direction)
+function getDirection(head, body) {
+    if (body.length === 0) return getOpposite(head.direction)
 
     const diffX = Math.abs(head.x - body[0].x) > 1
         ? head.x - body[0].x > 0
@@ -184,7 +210,7 @@ function generateFood() {
         },
             fullsnake = [snake.head].concat(snake.body, [snake.tail]).map(item => `${item.x}:${item.y}`).join("; ")
         if (fullsnake.includes(`${newFood.x}:${newFood.y}`) || newFood.x < 0 || newFood.y < 0 || newFood.x >= Width / boxSize || newFood.y >= Height / boxSize) {
-            if (tries > 5) {
+            if (tries > FPS) {
                 if ((Base.Min < 2 ? 1e12 : Base.Min) > snake.body.length) Base.Min = snake.body.length;
                 if ((Base.Fastest < 2 ? 1e12 : Base.Fastest) > Date.now() - Base.LastStart) Base.Fastest = Date.now() - Base.LastStart;
                 Base.Win = true;
@@ -195,7 +221,7 @@ function generateFood() {
         else break;
     }
     Base.Food = newFood
-    Draw(PredrawFood(Base.Food))
+    Draw(predrawFood(Base.Food))
 }
 
 function moveToTarget(target) {
@@ -204,50 +230,52 @@ function moveToTarget(target) {
         difference = {
             x: [
                 target.x - now.x,
-                target.x - Width / boxSize - now.x
+                target.x - Width / boxSize - now.x,
+                target.x + Width / boxSize - now.x
             ].sort((a, b) => Math.abs(a) - Math.abs(b))[0],
             y: [
                 target.y - now.y,
                 target.y - Height / boxSize - now.y,
+                target.y + Height / boxSize - now.y,
             ].sort((a, b) => Math.abs(a) - Math.abs(b))[0]
         }
-    if (Math.round(Math.random()) && difference.x) {
+    if (difference.x && (difference.y ? Math.abs(difference.x) < Math.abs(difference.y) : true)) {
         let action = difference.x > 0 ? "right" : "left"
         snake = actions[action](snake)
         let newTail = snake.body.pop()
-        snake.tail = { x: newTail.x, y: newTail.y, direction: snake.body.length > 0 ? snake.body[snake.body.length - 1].direction.split("-")[1] : GetOpposite(snake.head.direction) }
+        snake.tail = { x: newTail.x, y: newTail.y, direction: snake.body.length > 0 ? snake.body[snake.body.length - 1].direction.split("-")[1] : getOpposite(snake.head.direction) }
     }
     else if (difference.y) {
         let action = difference.y > 0 ? "down" : "up"
         snake = actions[action](snake)
         let newTail = snake.body.pop()
-        snake.tail = { x: newTail.x, y: newTail.y, direction: snake.body.length > 0 ? snake.body[snake.body.length - 1].direction.split("-")[1] : GetOpposite(snake.head.direction) }
+        snake.tail = { x: newTail.x, y: newTail.y, direction: snake.body.length > 0 ? snake.body[snake.body.length - 1].direction.split("-")[1] : getOpposite(snake.head.direction) }
     }
     //console.log(`{${snake.head.x}, ${snake.head.y} => ${snake.head.direction}} [${snake.body.map((item, index) => `${index}: {${item.x}, ${item.y} => ${item.direction}}`).join(" ")}] ${snake.tail ? `{${snake.tail.x}, ${snake.tail.y} => ${snake.tail.direction}}` : ""}`)
     drawGame()
 }
 
 function drawGame(start) {
-    if (start) { //Змея режется
+    if (start) {
         ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-        Draw(PredrawFood(Base.Food));
+        Draw(predrawFood(Base.Food));
 
-        Draw(PredrawTail(snake.tail));
+        Draw(predrawTail(snake.tail));
 
         for (let segment of snake.body) {
-            Draw(PredrawBody(segment))
+            Draw(predrawBody(segment))
         }
 
-        Draw(PredrawHead(snake.head));
+        Draw(predrawHead(snake.head));
     } else {
         let willRedraw = [],
             functions = {
-                "head": PredrawHead,
-                "body": PredrawBody,
-                "tail": PredrawTail
+                "head": predrawHead,
+                "body": predrawBody,
+                "tail": predrawTail
             },
-            wholeSnake = [{ x: snake.tail.x, y: snake.tail.y, direction: snake.tail.direction, type: "tail" }].concat(snake.body.map(segment => { return { x: segment.x, y: segment.y, direction: segment.direction, type: "body" } }), [{ x: snake.head.x, y: snake.head.y, direction: snake.head.direction, type: "head" }])
+            wholeSnake = [{ x: snake.tail.x, y: snake.tail.y, direction: snake.tail.direction, type: "tail" }].concat(snake.body.map(segment => { return { x: segment.x, y: segment.y, direction: segment.direction, type: "body" } }).slice().reverse(), [{ x: snake.head.x, y: snake.head.y, direction: snake.head.direction, type: "head" }])
         if (beforePositions.tail.x !== snake.tail.x || beforePositions.tail.y !== snake.tail.y) {
             willRedraw.push({ x: snake.tail.x, y: snake.tail.y })
             willRedraw.push({ x: beforePositions.tail.x, y: beforePositions.tail.y })
@@ -283,7 +311,7 @@ function Frame() {
         moveToTarget(targets[0])
     } else if (Base.AI) targets.add(Base.Food)
 
-    stats.innerHTML = `<a>Size: ${canvas.width}px x ${canvas.height}px // ${canvas.width / boxSize}vp x ${canvas.height / boxSize}vp (${canvas.width * canvas.height / (boxSize ** 2)}vp)</a><br />` +
+    stats.innerHTML = `<a>Size: ${canvas.width}px x ${canvas.height}px || ${canvas.width / boxSize}vp x ${canvas.height / boxSize}vp (${canvas.width * canvas.height / (boxSize ** 2)}vp)</a><br />` +
         `<a>Score: ${snake.body.length}</a><br />` +
         (Base.Min === 0 ? "" : `<a>Min: ${Base.Min}</a><br />`) +
         (Base.Fastest === 0 ? "" : `<a>Fastest: ${Base.Fastest / 1000}s</a><br />`) +
@@ -303,7 +331,7 @@ function Frame() {
     Frames.add(Date.now())
 }
 
-function GetConditions(direction) {
+function getConditions(direction) {
     let directions = {
         "right": { mirrorX: false, mirrorY: false, replace: false },
         "down": { mirrorX: false, mirrorY: true, replace: true },
@@ -313,7 +341,7 @@ function GetConditions(direction) {
     return directions[direction]
 }
 
-function GetCoordinates(startPosition, X, Y, conditions) {
+function getCoordinates(startPosition, X, Y, conditions) {
     const { mirrorX, mirrorY, replace } = conditions
     x = mirrorX ? TPinBox - 1 - X : X
     y = mirrorY ? TPinBox - 1 - Y : Y
@@ -334,7 +362,7 @@ function Predraw(position, texture, colors, conditions = { mirrorX: false, mirro
             else y_line1 = y_line
             y_line1.replace(/\s/g, "_").split("").forEach((x_elem, abscissa) => {
                 if (matchesColor(x_elem, index)) {
-                    const DotCoordinates = GetCoordinates(position, abscissa, ordinate, conditions)
+                    const DotCoordinates = getCoordinates(position, abscissa, ordinate, conditions)
                     Dots.push({ x: DotCoordinates.x, y: DotCoordinates.y, color })
                 }
             })
@@ -343,39 +371,39 @@ function Predraw(position, texture, colors, conditions = { mirrorX: false, mirro
     return Dots
 }
 
-function PredrawFood(food) {
+function predrawFood(food) {
     return Predraw(food, Textures.food.texture, Textures.food.colors)
 }
 
-function PredrawHead(head) {
-    return Predraw(head, Textures.head.texture, Textures.head.colors, GetConditions(head.direction))
+function predrawHead(head) {
+    return Predraw(head, Textures.head.texture, Textures.head.colors, getConditions(head.direction))
 }
 
-function PredrawBody(segment) {
+function predrawBody(segment) {
 
     const directions = segment.direction.split("-"),
         previous = directions[0],
         next = directions[1],
         same = previous === next,
-        opposite = GetOpposite(previous) === next,
+        opposite = getOpposite(previous) === next,
         { colors } = Textures.body
 
-    if (opposite) return Predraw(segment, Textures.body.straight, colors, GetConditions(previous))
-    else if (same) return Predraw(segment, Textures.body.back, colors, GetConditions(previous))
+    if (opposite) return Predraw(segment, Textures.body.straight, colors, getConditions(previous))
+    else if (same) return Predraw(segment, Textures.body.back, colors, getConditions(previous))
     else {
         let directions = ["right", "down", "left", "up"],
             prev = directions.indexOf(previous) + 1,
             nxt = directions.indexOf(next) + 1,
             anticlockwise = prev - (nxt === 0 ? 4 : nxt) === 1 || prev - nxt === -3,
-            coordinates = GetConditions(previous)
+            coordinates = getConditions(previous)
 
         return Predraw(segment, anticlockwise ? Textures.body.turn.slice().reverse() : Textures.body.turn, colors, coordinates)
     }
 
 }
 
-function PredrawTail(tail) {
-    return Predraw(tail, Textures.tail.texture, Textures.tail.colors, GetConditions(tail.direction))
+function predrawTail(tail) {
+    return Predraw(tail, Textures.tail.texture, Textures.tail.colors, getConditions(tail.direction))
 }
 
 function Draw(Dots) {
@@ -400,8 +428,8 @@ for (let n = 0; n < targets.limit; n++) {
     child.style.background = child.style.borderColor = "rgb(0, 0, 255)"
     child.classList.add(`target`)
     child.classList.add(`t${n}`)
-    child.style.height = child.style.width = boxSize * 0.75 + "px"
+    child.style.height = child.style.width = boxSize + "px"
     child.style.borderRadius = `50%`
-    child.style.font = `bold ${Math.round(boxSize * 0.25)}px serif`
+    child.style.font = `bold ${Math.round(boxSize * 0.375)}px serif`
     childs.push(child)
 }
